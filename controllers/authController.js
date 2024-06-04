@@ -2,8 +2,8 @@ const jwt = require("jsonwebtoken");
 const { promisify } = require("util");
 const crypto = require("crypto");
 
+const Panel = require("../models/panelModel");
 const Email = require("../utils/email");
-
 const User = require("../models/userModel");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
@@ -212,10 +212,21 @@ exports.isLoggedIn = async (req, res, next) => {
 exports.restrictTo = function (...roles) {
   return function (req, res, next) {
     if (!roles.includes(req.user.role)) {
-      next(
+      return next(
         new AppError("you don't have permission to preform this action", 403)
       );
     }
     next();
   };
 };
+
+exports.restrictToManger = catchAsync(async (req, res, next) => {
+  const panel = await Panel.findById(req.params.panelId || req.body.panel);
+  if (req.user.role !== "admin" && String(panel.manger) !== req.user.id) {
+    return next(
+      new AppError("you don't have permission to mange this panel", 403)
+    );
+  }
+  req.panel = panel;
+  next();
+});

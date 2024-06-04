@@ -3,6 +3,8 @@ const appError = require("../utils/appError");
 const catchAsync = require("../utils/catchAsync");
 const factoryController = require("./factoryController");
 const User = require("../models/userModel");
+const Reading = require("../models/readingModel");
+const dateFns = require("date-fns");
 
 const mongoose = require("mongoose");
 exports.getAllPanels = factoryController.getAll(Panel);
@@ -63,6 +65,63 @@ exports.getUsersWhoAccessPanel = catchAsync(async (req, res, next) => {
     result: users.length,
     data: {
       users,
+    },
+  });
+});
+
+exports.bestPreformingPanel = catchAsync(async (req, res, next) => {
+  const panels = req.user.panels;
+
+  const readings = await Reading.aggregate([
+    {
+      $match: {
+        panel: { $in: panels },
+        date: { $gte: dateFns.subDays(new Date(), 14), $lte: new Date() },
+      },
+    },
+    {
+      $group: {
+        _id: "$panel",
+        temperature: { $avg: "$temperature" },
+        rainDrop: { $avg: "$rainDrop" },
+        current: { $avg: "$current" },
+        pressure: { $avg: "$pressure" },
+        humidity: { $avg: "$humidity" },
+        readingsCount: { $sum: 1 },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        panel: "$_id",
+        temperature: { $round: ["$temperature", 1] },
+        rainDrop: { $round: ["$rainDrop", 1] },
+        current: { $round: ["$current", 1] },
+        pressure: { $round: ["$pressure", 1] },
+        humidity: { $round: ["$humidity", 1] },
+        readingsCount: 1,
+      },
+    },
+  ]);
+
+  await Panel.populate(readings, "panel");
+
+  const highestReading = readings.sort((a, b) => b.current - a.current)[0];
+
+  const bestPanel = {
+    name: highestReading.panel.name,
+    Location: highestReading.panel.location,
+    manger: highestReading.panel.manger,
+    id: highestReading.panel.id,
+    ...highestReading,
+  };
+
+  delete bestPanel.panel;
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      panel: bestPanel,
     },
   });
 });

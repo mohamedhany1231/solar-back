@@ -24,13 +24,15 @@ function generateReading(date) {
     current: Math.round(Math.random() * 30),
     pressure: Math.round(Math.random() * 70),
     date,
-    panel: "663cd19d63ade4be7cd8036e",
+    panel: "663cd22b63ade4be7cd80371",
   };
 }
 
+const startDate = dateFns.addMonths(Date.now(), 1);
+
 async function addReadings() {
   for (let m = 0; m < 12; m++) {
-    const month = dateFns.subMonths(Date.now(), m);
+    const month = dateFns.subMonths(startDate, m);
 
     month.setUTCDate(1);
     month.setUTCHours(0, 0, 0, 0);
@@ -41,9 +43,9 @@ async function addReadings() {
 
     for (let d = 0; d < days; d++) {
       const date = dateFns.addDays(month, d);
-      if (dateFns.isAfter(date, Date.now())) {
-        break;
-      }
+      // if (dateFns.isAfter(date, Date.now())) {
+      //   break;
+      // }
 
       for (let h = 0; h < 24; h += 3) {
         promises.push(

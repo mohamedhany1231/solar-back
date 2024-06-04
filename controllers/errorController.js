@@ -45,11 +45,11 @@ module.exports = (err, req, res, next) => {
       message: error.message,
     });
   } else {
-    console.log(error);
+    console.log(err);
 
-    res.status(error.statusCode).json({
-      status: error.status,
-      message: error.message,
+    res.status(err.statusCode).json({
+      status: err.status,
+      message: err.message,
       error: err,
     });
   }

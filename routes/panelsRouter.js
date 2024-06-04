@@ -8,15 +8,19 @@ router
   .get(panelController.getAllPanels)
   .post(panelController.createPanel);
 
-router.all(authController.protect);
+router.use(authController.protect);
 
-router.route("/addUser").post(panelController.addUserToPanel);
-router.route("/removeUser").post(panelController.removeUserFromPanel);
 router
-  .route("/myPanels")
-  .get(authController.protect, panelController.getUserPanels);
+  .route("/addUser")
+  .post(authController.restrictToManger, panelController.addUserToPanel);
+router
+  .route("/removeUser")
+  .post(authController.restrictToManger, panelController.removeUserFromPanel);
+router.route("/myPanels").get(panelController.getUserPanels);
 
 router.route("/:id/getUsers").get(panelController.getUsersWhoAccessPanel);
+
+router.get("/best-panel", panelController.bestPreformingPanel);
 
 router
   .route("/:id")
