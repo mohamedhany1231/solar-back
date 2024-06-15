@@ -15,7 +15,10 @@ router.use(authController.protect);
 router.route("/:panelId/monthly").get(readingController.getMonthlyAvg);
 router.route("/:panelId/day").get(readingController.getDayAvg);
 router.route("/:panelId/recent").get(readingController.getRecentReadings);
+router.route("/:panelId/latest").get(readingController.getLatestReading);
+
 router.route("/peak-time").get(readingController.peakPerformanceTime);
+router.route("/total-energy").get(readingController.totalEnergy);
 
 router
   .route("/:readingId")

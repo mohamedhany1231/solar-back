@@ -6,8 +6,16 @@ const AppError = require("../utils/appError");
 const factory = require("./factoryController");
 const { v2: cloudinary } = require("cloudinary");
 const streamifier = require("streamifier");
+const mongoose = require("mongoose");
 
-const baseURL = `http://res.cloudinary.com/${process.env.CLOUDINARY_NAME}/image/upload/v1716468263`;
+const SETTINGS_FIELDS = [
+  "environmental",
+  "performance",
+  "component",
+  "operational",
+];
+
+const baseURL = `https://res.cloudinary.com/${process.env.CLOUDINARY_NAME}/image/upload`;
 
 cloudinary.config({
   api_key: process.env.CLOUDINARY_KEY,
@@ -42,17 +50,22 @@ exports.resizeUserPhoto = catchAsync(async (req, res, next) => {
 
     const folder = "solar/users";
 
-    const cloudinaryStream = cloudinary.uploader.upload_stream({
-      folder,
-      public_id: fileName,
-    });
+    const cloudinaryStream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        public_id: fileName,
+      },
+      (err, response) => {
+        req.body.photo = response.secure_url;
+
+        next();
+      }
+    );
 
     streamifier.createReadStream(img).pipe(cloudinaryStream);
-
-    req.body.photo = `${baseURL}/${folder}/${fileName}`;
+  } else {
+    next();
   }
-
-  next();
 });
 
 const filterObj = (obj, ...allowedFields) => {
@@ -70,6 +83,7 @@ exports.getMe = (req, res, next) => {
 
 exports.updateMe = catchAsync(async (req, res, next) => {
   // 1) Create error if user POSTs password data
+  req.body.email = undefined;
   if (req.body.password || req.body.passwordConfirm) {
     return next(
       new AppError(
@@ -106,12 +120,59 @@ exports.deleteMe = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.createUser = (req, res) => {
-  res.status(500).json({
-    status: "error",
-    message: "This route is not defined! Please use /signup instead",
+exports.createUser = catchAsync(async (req, res, next) => {
+  const { name, email, password, confirmPassword, role } = req.body;
+  const user = await User.create({
+    name,
+    email,
+    password,
+    confirmPassword,
+    role,
   });
-};
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      user,
+    },
+  });
+});
+
+exports.updateSettings = catchAsync(async (req, res, next) => {
+  const settings = {};
+  SETTINGS_FIELDS.forEach((field) => {
+    settings[field] = req.body[field] || req.user.settings[field];
+  });
+  const user = await User.findByIdAndUpdate(
+    req.user.id,
+    {
+      settings,
+    },
+    { runValidators: true, new: true }
+  );
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      user,
+    },
+  });
+});
+
+exports.getPanelViewers = catchAsync(async (req, res, next) => {
+  const panelId = new mongoose.Types.ObjectId(req.params.panelId);
+
+  const users = await User.find({ panels: panelId });
+
+  res.status(200).json({
+    status: "success",
+    result: users.length,
+    data: {
+      users,
+    },
+  });
+});
+
 exports.getUser = factory.getOne(User);
 exports.getAllUsers = factory.getAll(User);
 

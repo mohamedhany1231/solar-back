@@ -31,27 +31,25 @@ exports.updateOne = (Model) =>
     res.status(200).json({
       status: "success",
       data: {
-        data: doc,
+        [Model.modelName.toLowerCase()]: doc,
       },
     });
   });
 
 exports.createOne = (Model) =>
   asyncCatch(async (req, res, next) => {
-    console.log(req.body);
     const newDoc = await Model.create(req.body);
 
     res.status(201).json({
       status: "success",
       data: {
-        data: newDoc,
+        [Model.modelName.toLowerCase()]: newDoc,
       },
     });
   });
 
 exports.getOne = (Model, popOptions) =>
   asyncCatch(async (req, res, next) => {
-    console.log(req.user);
     let query = Model.findById(req.params.id);
     if (popOptions) query = query.populate(popOptions);
     const doc = await query;
@@ -63,16 +61,14 @@ exports.getOne = (Model, popOptions) =>
     res.status(200).json({
       status: "success",
       data: {
-        data: doc,
+        [Model.modelName.toLowerCase()]: doc,
       },
     });
   });
 
 exports.getAll = (Model) =>
   asyncCatch(async (req, res, next) => {
-    // filter for reviews search using tour id
-    let filter = {};
-    if (req.params.tourId) filter = { tour: req.params.tourId };
+    let filter = req.params;
 
     const features = new APIfeatures(Model.find(filter), req.query)
       .filter()
@@ -80,15 +76,14 @@ exports.getAll = (Model) =>
       .limitFields()
       .pagination();
 
-    const tours = await features.query;
-    // const tours = await features.query.explain();
+    const docs = await features.query;
 
     res.status(200).json({
       status: "success",
       requestAt: req.requestedTime,
-      result: tours.length,
-      data: {
-        tours,
+      result: docs.length,
+      [Model.modelName.toLowerCase() + "s"]: {
+        docs,
       },
     });
   });

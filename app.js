@@ -4,11 +4,20 @@ const globalErrorHandler = require("./controllers/errorController");
 const morgan = require("morgan");
 const cors = require("cors");
 const app = express();
+const cookieParser = require("cookie-parser");
 const sendEmail = require("./utils/email");
 
 app.use(express.json());
 
-app.use(cors());
+const corsConfig = {
+  origin: ["http://localhost:5173"],
+  credentials: true,
+};
+
+app.use(cors(corsConfig));
+app.options("*", cors(corsConfig));
+
+app.use(cookieParser());
 
 console.log(process.env.NODE_ENV);
 if (process.env.NODE_ENV !== "production") {

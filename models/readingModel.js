@@ -2,8 +2,8 @@ const mongoose = require("mongoose");
 
 const ReadingSchema = new mongoose.Schema({
   temperature: Number,
-  humidity: Number,
-  rainDrop: Number,
+  color: Number,
+  intensity: Number,
   current: Number,
   pressure: Number,
 

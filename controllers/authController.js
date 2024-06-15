@@ -7,7 +7,7 @@ const Email = require("../utils/email");
 const User = require("../models/userModel");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
-const sendEmail = require("../utils/email");
+
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES,
@@ -15,18 +15,29 @@ const signToken = (id) =>
 
 const createSendToken = (id, statusCode, req, res) => {
   const token = signToken(id);
+  res.cookie("jwt", token, {
+    expiresIn: new Date(Date.now() + 30 * 24 * 60 * 1000),
+    httpOnly: true,
+    sameSite: "none",
+    partitionKey: "http://localhost:5173",
+  });
   res.status(statusCode).json({
     status: "success",
     token,
   });
 };
 
-exports.signup = catchAsync(async (req, res, next) => {
-  const { name, email, password, confirmPassword } = req.body;
-  await User.create({ name, email, password, confirmPassword });
+// exports.signup = catchAsync(async (req, res, next) => {
+//   const { name, email, password, confirmPassword } = req.body;
+//   const user = await User.create({ name, email, password, confirmPassword });
 
-  createSendToken(user.id, 201, res, res);
-});
+//   res.status(200).json({
+//     status: "success",
+//     data: {
+//       user,
+//     },
+//   });
+// });
 
 exports.login = catchAsync(async (req, res, next) => {
   // 1- check email and password in req body
@@ -36,7 +47,7 @@ exports.login = catchAsync(async (req, res, next) => {
     next(new AppError("pleaser provide email and password", 400));
   }
   // 2- check if user with email and password exist
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email }).select("+password");
 
   if (!user || !user.correctPassword(user.password, password)) {
     next(new AppError("invalid email or password", 401));
@@ -65,7 +76,12 @@ exports.protect = catchAsync(async (req, res, next) => {
 
   // 2 check if token is valid
 
-  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+  let decoded;
+  try {
+    decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+  } catch (err) {
+    return next(new AppError("invalid token provided", 401));
+  }
 
   // 3 check if user belongs to token exist
   const user = await User.findById(decoded.id);
@@ -174,19 +190,21 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
 });
 
 exports.logout = (req, res) => {
-  res.cookie("JWT", "loggedout", {
+  res.cookie("jwt", "loggedout", {
     expires: new Date(Date.now() + 10 * 1000),
     httpOnly: true,
+    sameSite: "none",
+    partitionKey: 'http://localhost:5173"',
   });
   res.status(200).json({ status: "success" });
 };
 
 exports.isLoggedIn = async (req, res, next) => {
-  if (req.cookies.JWT) {
+  if (req.cookies.jwt) {
     try {
       // 1) verify token
       const decoded = await promisify(jwt.verify)(
-        req.cookies.JWT,
+        req.cookies.jwt,
         process.env.JWT_SECRET
       );
 
@@ -211,6 +229,7 @@ exports.isLoggedIn = async (req, res, next) => {
 
 exports.restrictTo = function (...roles) {
   return function (req, res, next) {
+    console.log(roles.includes(req.user.role));
     if (!roles.includes(req.user.role)) {
       return next(
         new AppError("you don't have permission to preform this action", 403)

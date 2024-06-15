@@ -7,9 +7,10 @@ class APIfeatures {
   }
 
   filter() {
+    console.log("filtering");
     // 1-filtering
     const queryObject = { ...this.queryString };
-    const excludedFields = ['page', 'sort', 'limit', 'fields'];
+    const excludedFields = ["page", "sort", "limit", "fields"];
     excludedFields.forEach((el) => delete queryObject[el]);
 
     // 1.2 - advanced filter
@@ -24,10 +25,10 @@ class APIfeatures {
 
   sort() {
     if (this.queryString.sort) {
-      const sortBy = this.queryString.sort.replaceAll(',', ' ');
+      const sortBy = this.queryString.sort.replaceAll(",", " ");
       this.query.sort(sortBy);
     } else {
-      this.query.sort('-createdAt -ratingAverage');
+      this.query.sort("-createdAt -ratingAverage");
     }
 
     return this;
@@ -36,10 +37,10 @@ class APIfeatures {
   limitFields() {
     // 3- field assigning (also known as the query "projection")
     if (this.queryString.fields) {
-      const fields = this.queryString.fields.replaceAll(',', ' ');
+      const fields = this.queryString.fields.replaceAll(",", " ");
       this.query.select(fields);
     } else {
-      this.query.select('-__v');
+      this.query.select("-__v");
     }
     return this;
   }

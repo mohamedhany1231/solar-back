@@ -8,17 +8,29 @@ router
   .get(panelController.getAllPanels)
   .post(panelController.createPanel);
 
+router.post("/initialize-panel", panelController.issueInitialRefreshToken);
+router.get("/refresh", panelController.refreshToken);
+router.get("/renew-refresh", panelController.renewRefreshToken);
+
 router.use(authController.protect);
 
 router
   .route("/addUser")
-  .post(authController.restrictToManger, panelController.addUserToPanel);
+  .post(
+    panelController.addUserToBody,
+    authController.restrictToManger,
+    panelController.addUserToPanel
+  );
+
 router
   .route("/removeUser")
-  .post(authController.restrictToManger, panelController.removeUserFromPanel);
-router.route("/myPanels").get(panelController.getUserPanels);
+  .post(
+    panelController.addUserToBody,
+    authController.restrictToManger,
+    panelController.removeUserFromPanel
+  );
 
-router.route("/:id/getUsers").get(panelController.getUsersWhoAccessPanel);
+router.route("/myPanels").get(panelController.getUserPanels);
 
 router.get("/best-panel", panelController.bestPreformingPanel);
 
