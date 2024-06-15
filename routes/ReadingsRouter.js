@@ -2,6 +2,7 @@ const express = require("express");
 
 const readingController = require("../controllers/readingController");
 const authController = require("../controllers/authController");
+const panelController = require("../controllers/panelController");
 
 const router = express.Router();
 
@@ -9,6 +10,12 @@ router
   .route("/")
   .get(readingController.getAllReadings)
   .post(readingController.createReading);
+
+router.post(
+  "/create-reading",
+  panelController.validateAccessToken,
+  readingController.createReading
+);
 
 router.use(authController.protect);
 

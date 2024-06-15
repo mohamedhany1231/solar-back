@@ -15,8 +15,6 @@ const SETTINGS_FIELDS = [
   "operational",
 ];
 
-const baseURL = `https://res.cloudinary.com/${process.env.CLOUDINARY_NAME}/image/upload`;
-
 cloudinary.config({
   api_key: process.env.CLOUDINARY_KEY,
   cloud_name: process.env.CLOUDINARY_NAME,
