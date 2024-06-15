@@ -194,7 +194,7 @@ exports.validateAccessToken = catchAsync(async (req, res, next) => {
   try {
     decoded = await jwt.verify(token, process.env.SOLAR_PANEL_JWT_SECRET);
   } catch (error) {
-    next(new AppError("invalid token", 401));
+    return next(new AppError("invalid token", 401));
   }
 
   if (!decoded?.id) return next(new AppError("invalid token", 401));
