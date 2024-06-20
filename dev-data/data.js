@@ -24,7 +24,7 @@ function generateReading(date) {
     current: Math.round(Math.random() * 30),
     pressure: Math.round(Math.random() * 70),
     date,
-    panel: "663cd22b63ade4be7cd80371",
+    panel: "663cd19d63ade4be7cd8036e",
   };
 }
 

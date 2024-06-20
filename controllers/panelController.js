@@ -9,6 +9,7 @@ const bcrypt = require("bcrypt");
 const mongoose = require("mongoose");
 
 const jwt = require("jsonwebtoken");
+const APIfeatures = require("../utils/apiFeatures");
 
 exports.getAllPanels = factoryController.getAll(Panel);
 exports.getPanel = factoryController.getOne(Panel);
@@ -63,13 +64,23 @@ exports.removeUserFromPanel = catchAsync(async (req, res, next) => {
 });
 
 exports.getUserPanels = catchAsync(async (req, res, next) => {
-  const panelsQuery = req.user.panels.map(async (panelId) => {
-    return await Panel.findById(panelId);
-  });
-  const panels = await Promise.all(panelsQuery);
+  if (!req.query.limit) req.query.limit = 10;
+  const features = new APIfeatures(
+    Panel.find({ _id: { $in: req.user.panels } }),
+    req.query
+  )
+    .filter()
+    .limitFields()
+    .pagination()
+    .sort();
+
+  const countQuery = Panel.countDocuments({ _id: { $in: req.user.panels } });
+
+  const [panels, pages] = await Promise.all([features.query, countQuery]);
+
   res.status(200).json({
     status: "success",
-    data: { panels },
+    data: { panels, pagesCount: Math.ceil(pages / req.query.limit) },
   });
 });
 

@@ -69,21 +69,25 @@ exports.getOne = (Model, popOptions) =>
 exports.getAll = (Model) =>
   asyncCatch(async (req, res, next) => {
     let filter = req.params;
-
+    if (!req.query.limit) req.query.limit = 10;
     const features = new APIfeatures(Model.find(filter), req.query)
       .filter()
       .sort()
       .limitFields()
       .pagination();
 
-    const docs = await features.query;
+    const countQuery = Model.countDocuments();
+
+    const [docs, pages] = await Promise.all([features.query, countQuery]);
 
     res.status(200).json({
       status: "success",
       requestAt: req.requestedTime,
       result: docs.length,
-      [Model.modelName.toLowerCase() + "s"]: {
-        docs,
+      data: {
+        [Model.modelName.toLowerCase() + "s"]: docs,
+
+        pagesCount: Math.ceil(pages / req.query.limit),
       },
     });
   });
