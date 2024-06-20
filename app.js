@@ -5,17 +5,37 @@ const morgan = require("morgan");
 const cors = require("cors");
 const app = express();
 const cookieParser = require("cookie-parser");
-const sendEmail = require("./utils/email");
+const rateLimit = require("express-rate-limit");
+const mongoSanitize = require("express-mongo-sanitize");
+const xss = require("xss-clean");
+const panelsRouter = require("./routes/panelsRouter");
+const ReadingsRouter = require("./routes/ReadingsRouter");
+const helmet = require("helmet");
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
 const corsConfig = {
-  origin: ["http://localhost:5173"],
+  origin: ["http://localhost:5173", "https://solar-front-theta.vercel.app"],
   credentials: true,
 };
 
+app.enable("trust proxy");
+
 app.use(cors(corsConfig));
 app.options("*", cors(corsConfig));
+
+const limiter = rateLimit({
+  max: 100,
+  windowMs: 60 * 60 * 1000,
+  message: "Too many requests from this IP, please try again in an hour!",
+});
+app.use("/api", limiter);
+
+app.use(xss());
+app.use(mongoSanitize());
+
+app.use(helmet());
 
 app.use(cookieParser());
 
@@ -25,23 +45,8 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 app.use("/api/v1/users", userRouter);
-
-app.route("/sendemail").get(async (req, res, next) => {
-  console.log("sendi");
-  await sendEmail({
-    email: "kaned65449@avastu.com",
-    subject: "test",
-    message: "testest",
-  }).catch((err) => console.log(err));
-  res
-    .status(200)
-    .json({ status: "success", message: "email sent successfully" });
-});
-
-const panelsRouter = require("./routes/panelsRouter");
 app.use("/api/v1/Panels", panelsRouter);
 
-const ReadingsRouter = require("./routes/ReadingsRouter");
 app.use("/api/v1/Readings", ReadingsRouter);
 
 app.use((error, req, res, next) => {
