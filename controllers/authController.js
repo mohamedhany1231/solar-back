@@ -19,7 +19,10 @@ const createSendToken = (id, statusCode, req, res) => {
     expiresIn: new Date(Date.now() + 30 * 24 * 60 * 1000),
     httpOnly: true,
     sameSite: "none",
-    partitionKey: "http://localhost:5173",
+    partitionKey:
+      process.env.NODE_ENV === "development"
+        ? "http://localhost:5173"
+        : "https://solar-front-theta.vercel.app/",
   });
   res.status(statusCode).json({
     status: "success",
