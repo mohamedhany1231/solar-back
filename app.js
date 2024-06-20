@@ -20,8 +20,6 @@ const corsConfig = {
   credentials: true,
 };
 
-app.enable("trust proxy");
-
 app.use(cors(corsConfig));
 app.options("*", cors(corsConfig));
 
