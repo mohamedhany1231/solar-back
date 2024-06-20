@@ -22,8 +22,8 @@ const createSendToken = (id, statusCode, req, res) => {
     sameSite: "none",
     domain:
       process.env.NODE_ENV === "development"
-        ? "http://localhost:5173"
-        : "https://solar-front-theta.vercel.app",
+        ? "http://localhost:3000"
+        : "https://solar-back-6rpz.onrender.com",
   });
   res.status(statusCode).json({
     status: "success",
