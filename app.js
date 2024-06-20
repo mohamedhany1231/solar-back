@@ -3,7 +3,6 @@ const userRouter = require("./routes/userRouter");
 const globalErrorHandler = require("./controllers/errorController");
 const morgan = require("morgan");
 const cors = require("cors");
-const app = express();
 const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
 const mongoSanitize = require("express-mongo-sanitize");
@@ -11,6 +10,9 @@ const xss = require("xss-clean");
 const panelsRouter = require("./routes/panelsRouter");
 const ReadingsRouter = require("./routes/ReadingsRouter");
 const helmet = require("helmet");
+
+const app = express();
+app.enable("trust proxy");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
