@@ -16,9 +16,11 @@ const signToken = (id) =>
 const createSendToken = (id, statusCode, req, res) => {
   const token = signToken(id);
   res.cookie("jwt", token, {
+    secure: process.env.NODE_ENV !== "development",
     expiresIn: new Date(Date.now() + 30 * 24 * 60 * 1000),
     httpOnly: true,
     sameSite: "none",
+
     partitionKey:
       process.env.NODE_ENV === "development"
         ? "http://localhost:5173"
