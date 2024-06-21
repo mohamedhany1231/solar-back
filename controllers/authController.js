@@ -16,10 +16,14 @@ const signToken = (id) =>
 const createSendToken = (id, statusCode, req, res) => {
   const token = signToken(id);
   res.cookie("jwt", token, {
-    secure: process.env.NODE_ENV !== "development",
     expiresIn: new Date(Date.now() + 30 * 24 * 60 * 1000),
+    secure: process.env.NODE_ENV !== "development",
     httpOnly: true,
     sameSite: "none",
+
+    partitionKey:
+      process.env.NODE_ENV === "development" && 'http://localhost:5173"',
+
     domain:
       process.env.NODE_ENV === "development"
         ? "localhost:3000"
@@ -196,9 +200,15 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
 exports.logout = (req, res) => {
   res.cookie("jwt", "loggedout", {
     expires: new Date(Date.now() + 10 * 1000),
+    secure: process.env.NODE_ENV !== "development",
     httpOnly: true,
     sameSite: "none",
-    partitionKey: 'http://localhost:5173"',
+    domain:
+      process.env.NODE_ENV === "development"
+        ? "localhost:3000"
+        : "solar-back-6rpz.onrender.com",
+    partitionKey:
+      process.env.NODE_ENV === "development" && 'http://localhost:5173"',
   });
   res.status(200).json({ status: "success" });
 };

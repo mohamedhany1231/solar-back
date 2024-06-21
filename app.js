@@ -41,9 +41,7 @@ app.use(helmet());
 app.use(cookieParser());
 
 console.log(process.env.NODE_ENV);
-if (process.env.NODE_ENV !== "production") {
-  app.use(morgan("dev"));
-}
+app.use(morgan("dev"));
 
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/Panels", panelsRouter);
