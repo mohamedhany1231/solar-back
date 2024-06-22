@@ -17,17 +17,12 @@ const createSendToken = (id, statusCode, req, res) => {
   const token = signToken(id);
   res.cookie("jwt", token, {
     expiresIn: new Date(Date.now() + 30 * 24 * 60 * 1000),
-    secure: process.env.NODE_ENV !== "development",
+    secure: true,
     httpOnly: true,
     sameSite: "none",
 
-    partitionKey:
-      process.env.NODE_ENV === "development" && 'http://localhost:5173"',
-
     domain:
-      process.env.NODE_ENV === "development"
-        ? "localhost:3000"
-        : "solar-back-6rpz.onrender.com",
+      process.env.NODE_ENV !== "development" && "solar-back-6rpz.onrender.com",
   });
   res.status(statusCode).json({
     status: "success",
@@ -50,6 +45,7 @@ const createSendToken = (id, statusCode, req, res) => {
 exports.login = catchAsync(async (req, res, next) => {
   // 1- check email and password in req body
   const { email, password } = req.body;
+  console.log(req.body);
 
   if (!email || !password) {
     next(new AppError("pleaser provide email and password", 400));
@@ -57,7 +53,9 @@ exports.login = catchAsync(async (req, res, next) => {
   // 2- check if user with email and password exist
   const user = await User.findOne({ email }).select("+password");
 
-  if (!user || !user.correctPassword(user.password, password)) {
+  console.log(user);
+
+  if (!user || !(await user.correctPassword(user.password, password))) {
     next(new AppError("invalid email or password", 401));
   }
 
@@ -200,15 +198,12 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
 exports.logout = (req, res) => {
   res.cookie("jwt", "loggedout", {
     expires: new Date(Date.now() + 10 * 1000),
-    secure: process.env.NODE_ENV !== "development",
+    secure: true,
     httpOnly: true,
     sameSite: "none",
+
     domain:
-      process.env.NODE_ENV === "development"
-        ? "localhost:3000"
-        : "solar-back-6rpz.onrender.com",
-    partitionKey:
-      process.env.NODE_ENV === "development" && 'http://localhost:5173"',
+      process.env.NODE_ENV !== "development" && "solar-back-6rpz.onrender.com",
   });
   res.status(200).json({ status: "success" });
 };
