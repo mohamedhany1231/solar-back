@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 
 const Reading = require("../models/readingModel");
 
+const panels = ["663cd19d63ade4be7cd8036e", "663cd22b63ade4be7cd80371"];
 dotenv.config({ path: "../config.env" });
 
 // console.log(process.argv);
@@ -16,55 +17,63 @@ mongoose.connect(DB, {}).then(() => {
   console.log("Connected to database ✅");
 });
 
-function generateReading(date) {
+function generateReading(date, panelId) {
   return {
     temperature: Math.round(Math.random() * 40),
-    humidity: Math.round(Math.random() * 60),
-    rainDrop: Math.round(Math.random() * 20),
+    intensity: Math.round(Math.random() * 60),
+    color: Math.round(Math.random() * 20),
     current: Math.round(Math.random() * 30),
+    power: Math.round(Math.random() * 30),
     pressure: Math.round(Math.random() * 70),
+    humidity: Math.round(Math.random() * 70),
     date,
-    panel: "663cd19d63ade4be7cd8036e",
+    panel: panelId,
   };
 }
 
 const startDate = dateFns.addMonths(Date.now(), 1);
 
 async function addReadings() {
-  for (let m = 0; m < 12; m++) {
-    const month = dateFns.subMonths(startDate, m);
+  const promises = [];
+  panels.forEach((panel) => {
+    for (let m = 0; m < 12; m++) {
+      const month = dateFns.subMonths(startDate, m);
 
-    month.setUTCDate(1);
-    month.setUTCHours(0, 0, 0, 0);
+      month.setUTCDate(1);
+      month.setUTCHours(0, 0, 0, 0);
 
-    const days = dateFns.getDaysInMonth(month);
+      const days = dateFns.getDaysInMonth(month);
 
-    const promises = [];
+      for (let d = 0; d < days; d++) {
+        const date = dateFns.addDays(month, d);
+        // if (dateFns.isAfter(date, Date.now())) {
+        //   break;
+        // }
 
-    for (let d = 0; d < days; d++) {
-      const date = dateFns.addDays(month, d);
-      // if (dateFns.isAfter(date, Date.now())) {
-      //   break;
-      // }
-
-      for (let h = 0; h < 24; h += 3) {
-        promises.push(
-          Reading.create(generateReading(dateFns.addHours(date, h)))
-        );
+        for (let h = 0; h < 24; h += 3) {
+          promises.push(
+            Reading.create(generateReading(dateFns.addHours(date, h), panel))
+          );
+        }
       }
+      console.log(m, "loops finished");
     }
+  });
 
-    console.log(m, "loops finished");
-    await Promise.all(promises);
-    console.log(m, "created");
-  }
+  console.log("creating data");
+  await Promise.all(promises);
   console.log("done");
 }
 
 async function deleteReadings() {
   console.log("deleting");
 
-  await Reading.deleteMany();
+  const promises = [];
+  panels.forEach((panelId) => {
+    promises.push(Reading.deleteMany({ panel: panelId }));
+  });
+  await Promise.all(promises);
+
   console.log("deleted");
 }
 

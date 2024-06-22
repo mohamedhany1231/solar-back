@@ -6,6 +6,8 @@ const ReadingSchema = new mongoose.Schema({
   intensity: Number,
   current: Number,
   pressure: Number,
+  power: Number,
+  humidity: Number,
 
   date: { type: Date, default: Date.now() },
   panel: { type: mongoose.Schema.ObjectId, ref: "Panel" },
