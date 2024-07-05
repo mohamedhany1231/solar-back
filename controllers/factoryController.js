@@ -40,6 +40,7 @@ exports.createOne = (Model) =>
   asyncCatch(async (req, res, next) => {
     const newDoc = await Model.create(req.body);
 
+    console.log(newDoc);
     res.status(201).json({
       status: "success",
       data: {

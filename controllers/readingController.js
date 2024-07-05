@@ -14,6 +14,7 @@ exports.updateReading = factoryController.updateOne(Reading);
 exports.deleteReading = factoryController.deleteOne(Reading);
 
 exports.createReading = catchAsync(async (req, res, next) => {
+  console.log(req.body);
   const warnings = generateWarning(req.body);
   const panelId = req.params.panelId || req.body.panel || req.panel.id;
   if (!req.body.panel) req.body.panel = panelId;

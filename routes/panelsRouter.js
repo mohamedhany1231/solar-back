@@ -36,8 +36,8 @@ router.get("/best-panel", panelController.bestPreformingPanel);
 
 router
   .route("/:id")
-  .get(panelController.getPanel)
-  .patch(panelController.updatePanel)
-  .delete(panelController.deletePanel);
+  .get(panelController.protectPanel, panelController.getPanel)
+  .patch(panelController.protectPanel, panelController.updatePanel)
+  .delete(panelController.protectPanel, panelController.deletePanel);
 
 module.exports = router;

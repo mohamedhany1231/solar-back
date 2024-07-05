@@ -10,6 +10,7 @@ const mongoose = require("mongoose");
 
 const jwt = require("jsonwebtoken");
 const APIfeatures = require("../utils/apiFeatures");
+const PanelSalt = require("../models/panelSaltModel");
 
 exports.getAllPanels = factoryController.getAll(Panel);
 exports.getPanel = factoryController.getOne(Panel);
@@ -61,6 +62,19 @@ exports.removeUserFromPanel = catchAsync(async (req, res, next) => {
       user,
     },
   });
+});
+
+exports.protectPanel = catchAsync(async (req, res, next) => {
+  if (req.user.role === "admin") return next();
+  const panelId = req.params.panelId || req.params.id;
+
+  if (
+    req.user.panels.some((p) => {
+      return p.toString() === panelId;
+    })
+  )
+    return next();
+  else next(new AppError("you do not have access to this panel", 401));
 });
 
 exports.getUserPanels = catchAsync(async (req, res, next) => {
@@ -160,11 +174,18 @@ function generateToken(id, isRefreshToken = false) {
 }
 
 exports.issueInitialRefreshToken = catchAsync(async (req, res, next) => {
-  const { hashedSecret, id } = req.body;
+  const { hashedSecret, salt, id } = req.body;
+  if (!salt || !hashedSecret)
+    return next(new AppError("salt and hashedSecret required", 403));
+  const existingSalt = await PanelSalt.findOne({ salt });
+
+  if (existingSalt?._id) return next(new AppError("salt already used", 403));
 
   if (
-    !hashedSecret ||
-    !(await bcrypt.compare(process.env.SOLAR_PANEL_SECRET_KEY, hashedSecret))
+    !(await bcrypt.compare(
+      process.env.SOLAR_PANEL_SECRET_KEY + salt,
+      hashedSecret
+    ))
   ) {
     return next(new AppError("invalid secret", 403));
   }
@@ -173,6 +194,7 @@ exports.issueInitialRefreshToken = catchAsync(async (req, res, next) => {
   if (id) {
     panel = await Panel.findById(id);
   } else {
+    await PanelSalt.create({ salt });
     panel = await Panel.create({
       name: `New panel ${Date.now()}`,
       description: `New panel added through API at date ${Date.now()}`,
@@ -181,6 +203,7 @@ exports.issueInitialRefreshToken = catchAsync(async (req, res, next) => {
 
   if (!panel?.id) return next(new AppError(" invalid panel id", 400));
 
+  await PanelSalt.create({ salt });
   const refreshToken = generateToken(panel.id, true);
   const accessToken = generateToken(panel.id);
 
